@@ -466,7 +466,11 @@ const loadVideoById = async (videoId) => {
     setVideoSource(data.external_video_url);
     setExternalStatus("Using external link.");
   } else if (data.storage_bucket === "local") {
-    const cachedUrl = localVideoCache.get(data.id);
+    const cachedUrl =
+      localVideoCache.get(data.id) ||
+      localVideoCache.get(
+        `${currentUser?.id}:${data.original_filename}:${data.file_size || ""}:${data.file_last_modified || ""}`
+      );
     if (cachedUrl) {
       setVideoSource(cachedUrl);
       setExternalStatus("Using local file.");
@@ -818,6 +822,7 @@ const handleLocalFileSelection = async (file) => {
   const safeName = file.name.replace(/\s+/g, "-");
   const storagePath = `local/${Date.now()}-${safeName}`;
   const localUrl = URL.createObjectURL(file);
+  const cacheKey = `${currentUser.id}:${file.name}:${file.size}:${file.lastModified}`;
 
   const targetId = pendingLocalVideoId || selectedVideoId;
   if (targetId) {
@@ -829,6 +834,8 @@ const handleLocalFileSelection = async (file) => {
         storage_path: storagePath,
         storage_bucket: "local",
         status: "local",
+        file_size: file.size,
+        file_last_modified: file.lastModified,
       })
       .eq("id", targetId);
     if (error) {
@@ -837,6 +844,7 @@ const handleLocalFileSelection = async (file) => {
       return;
     }
     localVideoCache.set(targetId, localUrl);
+    localVideoCache.set(cacheKey, localUrl);
     currentPlaybackMode = "local";
     await loadVideos();
     await loadVideoById(targetId);
@@ -853,6 +861,8 @@ const handleLocalFileSelection = async (file) => {
       storage_path: storagePath,
       storage_bucket: "local",
       status: "local",
+      file_size: file.size,
+      file_last_modified: file.lastModified,
     })
     .select()
     .single();
@@ -864,6 +874,7 @@ const handleLocalFileSelection = async (file) => {
   }
 
   localVideoCache.set(data.id, localUrl);
+  localVideoCache.set(cacheKey, localUrl);
   currentPlaybackMode = "local";
   await loadVideos();
   await loadVideoById(data.id);

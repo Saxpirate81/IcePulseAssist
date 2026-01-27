@@ -36,6 +36,8 @@ create table if not exists public.videos (
   game_date date,
   team_name text,
   opponent_name text,
+  file_size bigint,
+  file_last_modified bigint,
   duration_seconds double precision,
   status text not null default 'uploaded',
   created_at timestamptz not null default now()
