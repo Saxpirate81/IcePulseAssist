@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <title>IcePulse Assist</title>
+    <link rel="icon" href="https://docs.google.com/drawings/d/e/2PACX-1vTnwhBLZ0wqJ1tmy_49vAVh_rarMflJMqiWFW6zEduFywwgUyLr3ntztrMXDob_c98zmh0F9vey79Rr/pub?w=960&h=288" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <div class="loading-overlay hidden" id="loadingOverlay" aria-live="polite">
+        <div class="puck-loader">
+          <div class="puck"></div>
+        </div>
+        <p class="muted" id="loadingText">Working...</p>
+      </div>
+      <header class="top-bar">
+        <div class="header-left">
+          <div class="brand">
+            <img
+              src="https://docs.google.com/drawings/d/e/2PACX-1vStg6tJMsSEZ7P8xryTshhXFG44y1gBzRVXT5ssyjDN9NVa0xIxJ6fPufD23qtw7N_LAV3xf_TGB8-2/pub?w=960&h=720"
+              alt="IcePulse Assist"
+            />
+          </div>
+        </div>
+        <div class="header-center">
+          <div class="video-select compact">
+            <label class="field">
+              <select id="videoSelect"></select>
+            </label>
+            <div class="video-select-actions">
+              <button class="ghost-btn is-hidden" id="editVideoBtn" type="button">Edit</button>
+              <button class="ghost-btn" id="loadVideoBtn" type="button">Load video</button>
+            </div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="account-menu">
+            <button class="primary-btn" id="profileBtn" type="button">Account</button>
+            <div class="account-dropdown hidden" id="accountMenu">
+              <p class="account-title" id="welcomeTitle">Welcome</p>
+              <div class="account-row">
+                <span class="chip" id="roleChip">Parent</span>
+              </div>
+              <div class="plan-card">
+                <p class="plan-title">Plan</p>
+                <p class="muted" id="planStatus">Free trial (7 days)</p>
+                <div class="plan-actions">
+                  <button class="ghost-btn" data-plan="trial" type="button">
+                    Start trial
+                  </button>
+                  <button class="ghost-btn" data-plan="basic" type="button">
+                    $2.99/mo Storage
+                  </button>
+                  <button class="ghost-btn" data-plan="sync" type="button">
+                    $4.99/mo Sync
+                  </button>
+                </div>
+                <p class="muted plan-hint">
+                  Billing setup will be connected to payments next.
+                </p>
+              </div>
+              <div class="plan-card" id="linkCard">
+                <p class="plan-title">Family links</p>
+                <p class="muted">
+                  Connect parents and players using a secure player code.
+                </p>
+                <div class="link-section hidden" id="parentLinkSection">
+                  <label class="field">
+                    Player code
+                    <input type="text" id="playerCodeInput" placeholder="Enter 6-digit code" />
+                  </label>
+                  <button class="primary-btn" id="linkPlayerBtn" type="button">
+                    Link player
+                  </button>
+                  <div class="linked-list" id="linkedPlayers"></div>
+                </div>
+                <div class="link-section hidden" id="playerCodeSection">
+                  <p class="muted">Your player code</p>
+                  <div class="code-pill" id="playerCodeDisplay">------</div>
+                  <div class="linked-list" id="linkedParents"></div>
+                </div>
+              </div>
+              <div class="account-actions">
+                <button class="ghost-btn" id="switchAccount" type="button">
+                  Switch account
+                </button>
+                <button class="ghost-btn" id="logoutBtn" type="button">Log out</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="mobile-video-bar" id="mobileVideoBar">
+        <div class="video-select">
+          <label class="field">
+            <select id="videoSelectMobile"></select>
+          </label>
+          <div class="video-select-actions">
+            <button class="ghost-btn is-hidden" id="editVideoBtnMobile" type="button">
+              Edit
+            </button>
+            <button class="ghost-btn" id="loadVideoBtnMobile" type="button">
+              Load video
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <input type="file" id="quickVideoInput" class="hidden-file-input" accept="video/*" />
+
+      <main class="page">
+        <section class="auth-panel" id="authPanel">
+          <div class="auth-card">
+            <h1>Welcome back</h1>
+            <p class="muted">
+              Log in to review games, upload video, and track player events.
+            </p>
+            <form class="auth-form" id="loginForm">
+              <label class="field">
+                Email
+                <input type="email" id="loginEmail" required placeholder="you@email.com" autocomplete="username" />
+              </label>
+              <label class="field">
+                Password
+                <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="current-password" />
+              </label>
+              <button class="primary-btn" type="submit">Log in</button>
+              <button class="ghost-btn" type="button" id="showReset" onclick="showResetView()">
+                Forgot password?
+              </button>
+              <button class="ghost-btn" type="button" id="showSignup" onclick="showSignupView()">
+                Need an account?
+              </button>
+            </form>
+          </div>
+
+          <div class="auth-card hidden" id="signupCard">
+            <h1>Create account</h1>
+            <p class="muted">Parents or players can sign up in seconds.</p>
+            <form class="auth-form" id="signupForm">
+              <label class="field">
+                Full name
+                <input type="text" id="signupName" required placeholder="Full name" />
+              </label>
+              <label class="field">
+                Email
+                <input type="email" id="signupEmail" required placeholder="you@email.com" autocomplete="username" />
+              </label>
+              <label class="field">
+                Role
+                <select id="signupRole">
+                  <option value="Parent">Parent</option>
+                  <option value="Player">Player</option>
+                </select>
+              </label>
+              <label class="field">
+                Password
+                <input type="password" id="signupPassword" required placeholder="Minimum 6 characters" autocomplete="new-password" />
+              </label>
+              <label class="field">
+                Confirm password
+                <input type="password" id="signupPasswordConfirm" required placeholder="Re-enter password" autocomplete="new-password" />
+              </label>
+              <p class="muted signup-hint">
+                We will email you a confirmation link to activate your account.
+              </p>
+              <button class="primary-btn" type="submit">Create account</button>
+              <button class="ghost-btn" type="button" id="showLogin" onclick="showLoginView()">
+                Already have an account?
+              </button>
+            </form>
+          </div>
+
+          <div class="auth-card hidden" id="resetCard">
+            <h1>Password reset</h1>
+            <p class="muted" id="resetSubtitle">
+              Enter your email and we will send a reset link.
+            </p>
+            <form class="auth-form" id="resetRequestForm">
+              <label class="field">
+                Email
+                <input type="email" id="resetEmail" required placeholder="you@email.com" />
+              </label>
+              <button class="primary-btn" type="submit">Send reset link</button>
+              <button class="ghost-btn" type="button" id="backToLogin" onclick="showLoginView()">
+                Back to login
+              </button>
+            </form>
+
+            <form class="auth-form hidden" id="resetUpdateForm">
+              <input type="email" autocomplete="username" hidden />
+              <label class="field">
+                New password
+                <input type="password" id="newPassword" required placeholder="Minimum 6 characters" autocomplete="new-password" />
+              </label>
+              <button class="primary-btn" type="submit">Update password</button>
+              <button class="ghost-btn" type="button" id="resetBackHome" onclick="showLoginView()">
+                Back to login
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section class="dashboard hidden" id="dashboard">
+          <div class="grid">
+            <section class="card video-card">
+              <div class="card-header">
+                <h3>Game video</h3>
+                <div class="video-header-actions">
+                  <button class="ghost-btn" id="openLogModalBtn" type="button">Log Event</button>
+                  <button class="ghost-btn" id="openEventsModalBtn" type="button">Logged Events</button>
+                  <button class="ghost-btn" id="openClipsModalBtn" type="button">Clip Workspace</button>
+                </div>
+              </div>
+              <div class="video-workspace">
+                <div class="video-main">
+                  <p class="muted">Main video</p>
+                  <div class="video-player">
+                    <video id="videoPlayer" controls playsinline></video>
+                    <button class="video-click-overlay" id="videoClickOverlay" type="button" aria-label="Log event"></button>
+                  </div>
+                  <div class="mobile-controls" id="mobileControls">
+                    <div class="timeline-row">
+                      <input type="range" id="mobileProgress" min="0" max="0" step="0.1" value="0" />
+                      <button class="ghost-btn" id="mobileScrollToggle" type="button">Scroll</button>
+                    </div>
+                    <div class="control-row">
+                      <button class="control-btn" data-seek="back" type="button">⏪</button>
+                      <button class="control-btn" data-jump="-5" type="button">-5</button>
+                      <span class="muted" id="mobileTime">0:00 / 0:00</span>
+                      <button class="control-btn" data-jump="5" type="button">+5</button>
+                      <button class="control-btn" data-seek="forward" type="button">⏩</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-overlay hidden" id="goalModal">
+      <div class="modal-card">
+        <h3>Shot placement</h3>
+        <p class="muted">Tap the net location.</p>
+        <div class="net-container" id="netContainer"></div>
+        <button class="ghost-btn" id="closeGoalModal" type="button">Cancel</button>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="penaltyModal">
+      <div class="modal-card">
+        <h3 id="penaltyTitle">Select penalty</h3>
+        <div class="penalty-grid" id="penaltyGrid"></div>
+        <div class="penalty-misc hidden" id="penaltyInputArea">
+          <input type="text" id="miscPenaltyInput" placeholder="Type penalty name..." />
+          <button class="primary-btn" id="confirmMiscPenalty" type="button">Confirm</button>
+        </div>
+        <button class="ghost-btn" id="closePenaltyModal" type="button">Cancel</button>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="videoMetaModal">
+      <div class="modal-card">
+        <h3>Edit game details</h3>
+        <label class="field">
+          Game date
+          <input type="date" id="gameDateInput" />
+        </label>
+        <label class="field">
+          Team name
+          <input type="text" id="teamNameInput" placeholder="Team name" />
+        </label>
+        <label class="field">
+          Opponent
+          <input type="text" id="opponentNameInput" placeholder="Opponent name" />
+        </label>
+        <label class="field">
+          Matching video URL
+          <input type="url" id="matchingUrlInput" placeholder="https://..." />
+        </label>
+        <p class="muted">This URL must match the same game video.</p>
+        <div class="video-sync">
+          <label class="field">
+            External video URL (YouTube or hosted link)
+            <input type="url" id="externalVideoUrl" placeholder="https://..." />
+          </label>
+          <div class="video-sync-actions">
+            <button class="ghost-btn" id="saveExternalUrlBtn" type="button">
+              Save link
+            </button>
+            <button class="ghost-btn" id="useExternalBtn" type="button">
+              Use external
+            </button>
+            <button class="ghost-btn" id="useLocalBtn" type="button">
+              Use local upload
+            </button>
+          </div>
+          <p class="muted" id="externalVideoStatus">No external link saved.</p>
+          <p class="muted" id="syncLockStatus">
+            Sync requires the $4.99/mo plan.
+          </p>
+        </div>
+        <div class="video-select-actions">
+          <button class="ghost-btn" id="cancelMetaBtn" type="button">Cancel</button>
+          <button class="primary-btn" id="saveMetaBtn" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="logModal">
+      <div class="modal-card modal-wide">
+        <div class="modal-header">
+          <h3>Log event</h3>
+          <button class="ghost-btn" id="closeLogModal" type="button">Close</button>
+        </div>
+        <div class="log-modal-body">
+          <div class="video-zoom">
+            <div class="zoom-player">
+              <video id="zoomVideo" muted playsinline></video>
+              <div class="zoom-crosshair"></div>
+            </div>
+            <div class="mobile-controls modal-controls">
+              <div class="timeline-row">
+                <input type="range" id="modalProgress" min="0" max="0" step="0.1" value="0" />
+                <button class="ghost-btn" id="modalScrollToggle" type="button">Scroll</button>
+              </div>
+              <div class="control-row">
+                <button class="control-btn" data-seek="back" type="button">⏪</button>
+                <button class="control-btn" data-jump="-5" type="button">-5</button>
+                <span class="muted" id="modalTime">0:00 / 0:00</span>
+                <button class="control-btn" data-jump="5" type="button">+5</button>
+                <button class="control-btn" data-seek="forward" type="button">⏩</button>
+              </div>
+            </div>
+          </div>
+          <div class="log-card">
+            <div class="log-fields">
+              <label class="field">
+                Active player #
+                <input type="text" id="activePlayer" placeholder="12" />
+              </label>
+              <label class="field">
+                Event note
+                <input type="text" id="eventNote" placeholder="Optional note" />
+              </label>
+            </div>
+            <div class="location-row">
+              <span class="muted" id="locationStatus">Tap the video to set ice location.</span>
+              <button class="ghost-btn" id="clearLocationBtn" type="button">Clear</button>
+            </div>
+            <div class="log-sections">
+              <div class="section-block">
+                <p class="section-title">Shifts</p>
+                <div class="button-grid">
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Shift Start">Shift start</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Shift End">Shift end</button>
+                </div>
+              </div>
+              <div class="section-block">
+                <p class="section-title">Faceoffs</p>
+                <div class="button-grid">
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Faceoff Win">Faceoff win</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Faceoff Loss">Faceoff loss</button>
+                </div>
+              </div>
+              <div class="section-block">
+                <p class="section-title">Shooting</p>
+                <div class="button-grid">
+                  <button class="secondary-btn event-btn" data-action="shot" data-event="Shot on Goal">Shot on goal</button>
+                  <button class="secondary-btn event-btn" data-action="shot" data-event="Goal">Goal</button>
+                  <button class="secondary-btn event-btn" data-action="shot" data-event="Save">Save</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Shot Wide">Shot wide</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Missed Shot">Missed shot</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Blocked">Blocked</button>
+                </div>
+              </div>
+              <div class="section-block">
+                <p class="section-title">Penalties</p>
+                <div class="button-grid">
+                  <button class="secondary-btn event-btn" data-action="penalty" data-penalty="Minor">Minor</button>
+                  <button class="secondary-btn event-btn" data-action="penalty" data-penalty="Major">Major</button>
+                  <button class="secondary-btn event-btn" data-action="penalty" data-penalty="Misc">Misc</button>
+                </div>
+              </div>
+              <div class="section-block">
+                <p class="section-title">Possession</p>
+                <div class="button-grid">
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Hit">Hit</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Turnover">Turnover</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Takeaway">Takeaway</button>
+                  <button class="secondary-btn event-btn" data-action="log" data-event="Offsides">Offsides</button>
+                </div>
+              </div>
+              <div class="section-block">
+                <p class="section-title">Custom</p>
+                <div class="button-grid">
+                  <button class="secondary-btn event-btn" data-action="custom">Custom event</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="eventsModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Logged Events</h3>
+          <button class="ghost-btn" id="closeEventsModal" type="button">Close</button>
+        </div>
+        <div class="ledger" id="ledger">
+          <div class="ledger-header">
+            <span>Time</span>
+            <span>Player</span>
+            <span>Event</span>
+          </div>
+          <div class="ledger-body" id="ledgerBody">
+            <p class="muted ledger-empty">No events logged yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="clipsModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Clip Workspace</h3>
+          <button class="ghost-btn" id="closeClipsModal" type="button">Close</button>
+        </div>
+        <div class="clip-preview">
+          <div class="clip-timeline" id="clipTimeline">
+            <p class="muted clip-empty">No clip requests yet.</p>
+          </div>
+          <button class="primary-btn" id="exportBtn">Export session report</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
