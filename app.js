@@ -144,6 +144,7 @@ let pendingDetailEventId = null;
 let savedClickCoords = undefined;
 let lastLocalVideoUrl = "";
 let lastLocalFile = null;
+let lastLocalDataUrl = "";
 let lastPickedKey = "";
 let lastPickedAt = 0;
 
@@ -262,6 +263,10 @@ const applyLocalVideoSource = (url) => {
 };
 
 const refreshLocalVideoFromFile = () => {
+  if (lastLocalDataUrl) {
+    applyLocalVideoSource(lastLocalDataUrl);
+    return;
+  }
   if (!lastLocalFile) return;
   if (lastLocalVideoUrl) {
     URL.revokeObjectURL(lastLocalVideoUrl);
@@ -999,6 +1004,7 @@ const handleLocalFileSelection = async (file) => {
     const reader = new FileReader();
     reader.onload = () => {
       if (!reader.result) return;
+      lastLocalDataUrl = reader.result;
       setVideoSource(reader.result);
     };
     reader.readAsDataURL(file);
@@ -1637,16 +1643,28 @@ document.addEventListener(
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
   if (currentPlaybackMode !== "local") return;
+  if (quickVideoInput?.files?.length) {
+    handlePickedFile(quickVideoInput.files[0]);
+    return;
+  }
   refreshLocalVideoFromFile();
 });
 
 window.addEventListener("pageshow", () => {
   if (currentPlaybackMode !== "local") return;
+  if (quickVideoInput?.files?.length) {
+    handlePickedFile(quickVideoInput.files[0]);
+    return;
+  }
   refreshLocalVideoFromFile();
 });
 
 window.addEventListener("focus", () => {
   if (currentPlaybackMode !== "local") return;
+  if (quickVideoInput?.files?.length) {
+    handlePickedFile(quickVideoInput.files[0]);
+    return;
+  }
   refreshLocalVideoFromFile();
 });
 

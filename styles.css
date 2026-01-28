@@ -1305,7 +1305,7 @@ body {
   }
 
   .page {
-    height: calc(100dvh - 96px - env(safe-area-inset-top));
+    height: calc(100dvh - 96px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow: hidden;
   }
 
@@ -1329,7 +1329,7 @@ body {
 
   .video-player {
     height: auto;
-    max-height: 52vh;
+    max-height: 46vh;
     aspect-ratio: 16 / 9;
     flex: 0 0 auto;
   }
@@ -1350,6 +1350,7 @@ body {
   .mobile-controls {
     margin-top: 8px;
     flex: 0 0 auto;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
   }
 }
 
