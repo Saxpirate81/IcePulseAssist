@@ -245,6 +245,21 @@ const updateProgressUI = () => {
   if (logTimeStatus) logTimeStatus.textContent = `Video time: ${text}`;
 };
 
+const applyLocalVideoSource = (url) => {
+  if (!url) return;
+  setVideoSource(url);
+  if (videoPlayer) videoPlayer.load();
+};
+
+const refreshLocalVideoFromFile = () => {
+  if (!lastLocalFile) return;
+  if (lastLocalVideoUrl) {
+    URL.revokeObjectURL(lastLocalVideoUrl);
+  }
+  lastLocalVideoUrl = URL.createObjectURL(lastLocalFile);
+  applyLocalVideoSource(lastLocalVideoUrl);
+};
+
 const updateEventDetailUI = () => {
   if (!eventZoomVideo) return;
   const duration = eventZoomVideo.duration || 0;
@@ -958,21 +973,18 @@ const handleLocalFileSelection = async (file) => {
   const cacheKey = `${currentUser.id}:${file.name}:${file.size}:${file.lastModified}`;
 
   currentPlaybackMode = "local";
-  setVideoSource(localUrl);
   setExternalStatus("Using local file.");
-  if (videoPlayer) videoPlayer.load();
   lastLocalVideoUrl = localUrl;
   lastLocalFile = file;
+  applyLocalVideoSource(localUrl);
   setTimeout(() => {
     if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
-      setVideoSource(localUrl);
-      if (videoPlayer) videoPlayer.load();
+      applyLocalVideoSource(localUrl);
     }
   }, 200);
   setTimeout(() => {
     if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
-      setVideoSource(localUrl);
-      if (videoPlayer) videoPlayer.load();
+      applyLocalVideoSource(localUrl);
     }
   }, 800);
 
@@ -1546,21 +1558,18 @@ document.addEventListener(
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
-  if (currentPlaybackMode !== "local" || !lastLocalVideoUrl) return;
-  setVideoSource(lastLocalVideoUrl);
-  if (videoPlayer) videoPlayer.load();
+  if (currentPlaybackMode !== "local") return;
+  refreshLocalVideoFromFile();
 });
 
 window.addEventListener("pageshow", () => {
-  if (currentPlaybackMode !== "local" || !lastLocalVideoUrl) return;
-  setVideoSource(lastLocalVideoUrl);
-  if (videoPlayer) videoPlayer.load();
+  if (currentPlaybackMode !== "local") return;
+  refreshLocalVideoFromFile();
 });
 
 window.addEventListener("focus", () => {
-  if (currentPlaybackMode !== "local" || !lastLocalVideoUrl) return;
-  setVideoSource(lastLocalVideoUrl);
-  if (videoPlayer) videoPlayer.load();
+  if (currentPlaybackMode !== "local") return;
+  refreshLocalVideoFromFile();
 });
 
 document.addEventListener("keyup", (event) => {
