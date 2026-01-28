@@ -460,6 +460,29 @@ body {
   display: block;
 }
 
+.retry-btn {
+  align-self: center;
+  margin-top: 8px;
+}
+
+.retry-btn.hidden {
+  display: none !important;
+}
+
+.video-zoom {
+  position: relative;
+}
+
+.log-play-toggle {
+  bottom: -18px;
+  z-index: 300;
+}
+
+.modal-open #videoPlayToggle {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .video-workspace {
   display: grid;
   grid-template-columns: 1fr;
@@ -474,6 +497,7 @@ body {
   flex-direction: column;
   gap: 10px;
   height: 100%;
+  min-height: 0;
 }
 
 .mobile-controls {
@@ -1290,16 +1314,20 @@ body {
   }
 
   .video-workspace {
-    min-height: auto;
-    height: calc(100% - 56px);
+    min-height: 0;
+    height: auto;
+    flex: 1 1 auto;
   }
 
   .video-main {
     height: 100%;
+    min-height: 0;
   }
 
   .video-player {
     height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .video-header-actions {
@@ -1313,6 +1341,11 @@ body {
     font-size: 10px;
     min-width: 0;
     flex: 1 1 0;
+  }
+
+  .mobile-controls {
+    margin-top: 8px;
+    flex: 0 0 auto;
   }
 }
 

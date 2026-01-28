@@ -23,7 +23,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=2026-01-26-13" />
+    <link rel="stylesheet" href="styles.css?v=2026-01-26-16" />
   </head>
   <body>
     <div class="app-shell">
@@ -238,7 +238,7 @@
                 <div class="video-main">
                   <p class="muted">Main video</p>
                   <div class="video-player">
-                    <video id="videoPlayer" controls playsinline></video>
+                    <video id="videoPlayer" playsinline></video>
                     <button class="video-click-overlay" id="videoClickOverlay" type="button" aria-label="Log event"></button>
                     <button class="video-play-toggle" id="videoPlayToggle" type="button" aria-label="Play video">
                       <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -277,6 +277,9 @@
                       </div>
                     </div>
                   </div>
+                  <button class="ghost-btn retry-btn hidden" id="retryLocalBtn" type="button">
+                    Use last picked video
+                  </button>
                 </div>
               </div>
             </section>
@@ -366,6 +369,15 @@
             <div class="zoom-player">
               <video id="zoomVideo" muted playsinline></video>
               <div class="zoom-crosshair"></div>
+              <button class="video-play-toggle log-play-toggle" id="logPlayToggle" type="button" aria-label="Play video">
+                <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <polygon points="8,5 20,12 8,19"></polygon>
+                </svg>
+                <svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="7" y="5" width="4" height="14"></rect>
+                  <rect x="13" y="5" width="4" height="14"></rect>
+                </svg>
+              </button>
             </div>
             <div class="mobile-controls modal-controls">
               <div class="timeline-row">
@@ -620,7 +632,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js?v=2026-01-26-13"></script>
-    <script src="app.js?v=2026-01-26-13"></script>
+    <script src="supabase.js?v=2026-01-26-16"></script>
+    <script src="app.js?v=2026-01-26-16"></script>
   </body>
 </html>

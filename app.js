@@ -44,6 +44,8 @@ const headerCenter = document.querySelector(".header-center");
 const mobileVideoBar = document.getElementById("mobileVideoBar");
 const videoClickOverlay = document.getElementById("videoClickOverlay");
 const videoPlayToggle = document.getElementById("videoPlayToggle");
+const logPlayToggle = document.getElementById("logPlayToggle");
+const retryLocalBtn = document.getElementById("retryLocalBtn");
 const confirmDeleteModal = document.getElementById("confirmDeleteModal");
 const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
 const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
@@ -249,6 +251,10 @@ const updateProgressUI = () => {
   if (logTimeStatus) logTimeStatus.textContent = `Video time: ${text}`;
 };
 
+const setLogModalOpen = (isOpen) => {
+  document.body.classList.toggle("modal-open", isOpen);
+};
+
 const applyLocalVideoSource = (url) => {
   if (!url) return;
   setVideoSource(url);
@@ -262,6 +268,11 @@ const refreshLocalVideoFromFile = () => {
   }
   lastLocalVideoUrl = URL.createObjectURL(lastLocalFile);
   applyLocalVideoSource(lastLocalVideoUrl);
+};
+
+const setRetryButtonVisible = (visible) => {
+  if (!retryLocalBtn) return;
+  retryLocalBtn.classList.toggle("hidden", !visible);
 };
 
 const updateEventDetailUI = () => {
@@ -993,6 +1004,7 @@ const handleLocalFileSelection = async (file) => {
   lastLocalVideoUrl = localUrl;
   lastLocalFile = blobForUrl;
   applyLocalVideoSource(localUrl);
+  setRetryButtonVisible(true);
   setTimeout(() => {
     if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
       applyLocalVideoSource(localUrl);
@@ -1032,6 +1044,7 @@ const handleLocalFileSelection = async (file) => {
       setVideoSource(localUrl);
       if (videoPlayer) videoPlayer.load();
     }
+    setRetryButtonVisible(true);
     pendingLocalVideoId = null;
     return;
   }
@@ -1066,6 +1079,7 @@ const handleLocalFileSelection = async (file) => {
     setVideoSource(localUrl);
     if (videoPlayer) videoPlayer.load();
   }
+  setRetryButtonVisible(true);
 };
 
 const handlePickedFile = async (file) => {
@@ -1154,11 +1168,17 @@ if (editVideoBtnMobile) {
 }
 
 if (openLogModalBtn) {
-  openLogModalBtn.addEventListener("click", () => logModal.classList.remove("hidden"));
+  openLogModalBtn.addEventListener("click", () => {
+    logModal.classList.remove("hidden");
+    setLogModalOpen(true);
+  });
 }
 
 if (closeLogModal) {
-  closeLogModal.addEventListener("click", () => logModal.classList.add("hidden"));
+  closeLogModal.addEventListener("click", () => {
+    logModal.classList.add("hidden");
+    setLogModalOpen(false);
+  });
 }
 
 if (openEventsModalBtn) {
@@ -1547,11 +1567,19 @@ document.addEventListener("click", (event) => {
 videoPlayer.addEventListener("play", () => {
   if (zoomVideo) zoomVideo.play();
   if (videoPlayToggle) videoPlayToggle.classList.add("is-playing");
+  if (logPlayToggle) logPlayToggle.classList.add("is-playing");
 });
 
 videoPlayer.addEventListener("pause", () => {
   if (zoomVideo) zoomVideo.pause();
   if (videoPlayToggle) videoPlayToggle.classList.remove("is-playing");
+  if (logPlayToggle) logPlayToggle.classList.remove("is-playing");
+});
+
+videoPlayer.addEventListener("loadedmetadata", () => {
+  if (videoPlayer.duration && videoPlayer.duration > 0) {
+    setRetryButtonVisible(false);
+  }
 });
 
 videoPlayer.addEventListener("seeking", () => {
@@ -1624,7 +1652,10 @@ if (videoClickOverlay) {
     lastClickCoords = coords;
     updateLocationStatus();
     updateZoomView();
-    if (logModal) logModal.classList.remove("hidden");
+    if (logModal) {
+      logModal.classList.remove("hidden");
+      setLogModalOpen(true);
+    }
   });
 }
 
@@ -1636,6 +1667,23 @@ if (videoPlayToggle) {
     } else {
       videoPlayer.pause();
     }
+  });
+}
+
+if (logPlayToggle) {
+  logPlayToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (videoPlayer.paused) {
+      videoPlayer.play();
+    } else {
+      videoPlayer.pause();
+    }
+  });
+}
+
+if (retryLocalBtn) {
+  retryLocalBtn.addEventListener("click", () => {
+    refreshLocalVideoFromFile();
   });
 }
 
