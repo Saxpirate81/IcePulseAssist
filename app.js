@@ -984,6 +984,10 @@ const handleLocalFileSelection = async (file) => {
     selectedVideoId = targetId;
     await loadVideos();
     await loadVideoById(targetId);
+    if (currentPlaybackMode === "local") {
+      setVideoSource(localUrl);
+      if (videoPlayer) videoPlayer.load();
+    }
     pendingLocalVideoId = null;
     return;
   }
@@ -1014,6 +1018,10 @@ const handleLocalFileSelection = async (file) => {
   selectedVideoId = data.id;
   await loadVideos();
   await loadVideoById(data.id);
+  if (currentPlaybackMode === "local") {
+    setVideoSource(localUrl);
+    if (videoPlayer) videoPlayer.load();
+  }
 };
 
 videoInput.addEventListener("change", async (event) => {
