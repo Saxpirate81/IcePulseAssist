@@ -138,6 +138,7 @@ let numberTargetEventId = null;
 let pendingEditEventId = null;
 let pendingDetailEventId = null;
 let savedClickCoords = undefined;
+let lastLocalVideoUrl = "";
 
 const PENALTY_MINORS = [
   "Tripping",
@@ -959,6 +960,13 @@ const handleLocalFileSelection = async (file) => {
   setVideoSource(localUrl);
   setExternalStatus("Using local file.");
   if (videoPlayer) videoPlayer.load();
+  lastLocalVideoUrl = localUrl;
+  setTimeout(() => {
+    if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
+      setVideoSource(localUrl);
+      if (videoPlayer) videoPlayer.load();
+    }
+  }, 200);
 
   const targetId = pendingLocalVideoId || selectedVideoId;
   if (targetId) {
@@ -1531,6 +1539,13 @@ document.addEventListener(
   },
   true
 );
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (currentPlaybackMode !== "local" || !lastLocalVideoUrl) return;
+  setVideoSource(lastLocalVideoUrl);
+  if (videoPlayer) videoPlayer.load();
+});
 
 document.addEventListener("keyup", (event) => {
   if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
