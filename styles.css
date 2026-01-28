@@ -618,7 +618,7 @@ body {
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--border);
   background: #050607;
 }
@@ -629,6 +629,7 @@ body {
   object-fit: contain;
   transform-origin: center;
   transform: scale(3);
+  border-radius: 16px;
 }
 
 .zoom-crosshair {
@@ -1323,12 +1324,14 @@ body {
   .video-main {
     height: 100%;
     min-height: 0;
+    flex: 1 1 auto;
   }
 
   .video-player {
-    height: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
+    height: auto;
+    max-height: 52vh;
+    aspect-ratio: 16 / 9;
+    flex: 0 0 auto;
   }
 
   .video-header-actions {

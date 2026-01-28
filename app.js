@@ -996,6 +996,12 @@ const handleLocalFileSelection = async (file) => {
   applyLocalVideoSource(localUrl);
   setRetryButtonVisible(true);
   if (isIOS) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (!reader.result) return;
+      setVideoSource(reader.result);
+    };
+    reader.readAsDataURL(file);
     file
       .arrayBuffer()
       .then((buffer) => {
