@@ -42,6 +42,13 @@ const closeClipsModal = document.getElementById("closeClipsModal");
 const headerCenter = document.querySelector(".header-center");
 const mobileVideoBar = document.getElementById("mobileVideoBar");
 const videoClickOverlay = document.getElementById("videoClickOverlay");
+const confirmDeleteModal = document.getElementById("confirmDeleteModal");
+const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+const numberPadModal = document.getElementById("numberPadModal");
+const numberDisplay = document.getElementById("numberDisplay");
+const numberCancelBtn = document.getElementById("numberCancelBtn");
+const numberDoneBtn = document.getElementById("numberDoneBtn");
 const mobileProgress = document.getElementById("mobileProgress");
 const mobileTime = document.getElementById("mobileTime");
 const mobileScrollToggle = document.getElementById("mobileScrollToggle");
@@ -79,7 +86,25 @@ const linkedParents = document.getElementById("linkedParents");
 const loadingOverlay = document.getElementById("loadingOverlay");
 const loadingText = document.getElementById("loadingText");
 const locationStatus = document.getElementById("locationStatus");
+const logTimeStatus = document.getElementById("logTimeStatus");
 const clearLocationBtn = document.getElementById("clearLocationBtn");
+const editEventModal = document.getElementById("editEventModal");
+const editPlayerNumber = document.getElementById("editPlayerNumber");
+const editEventNote = document.getElementById("editEventNote");
+const cancelEditEventBtn = document.getElementById("cancelEditEventBtn");
+const saveEditEventBtn = document.getElementById("saveEditEventBtn");
+const eventDetailModal = document.getElementById("eventDetailModal");
+const closeEventDetailModal = document.getElementById("closeEventDetailModal");
+const eventZoomVideo = document.getElementById("eventZoomVideo");
+const eventProgress = document.getElementById("eventProgress");
+const eventTime = document.getElementById("eventTime");
+const eventScrollToggle = document.getElementById("eventScrollToggle");
+const detailPlayerNumber = document.getElementById("detailPlayerNumber");
+const detailEventNote = document.getElementById("detailEventNote");
+const detailEventMeta = document.getElementById("detailEventMeta");
+const detailEditBtn = document.getElementById("detailEditBtn");
+const detailDeleteBtn = document.getElementById("detailDeleteBtn");
+const eventDetailTitle = document.getElementById("eventDetailTitle");
 const goalModal = document.getElementById("goalModal");
 const netContainer = document.getElementById("netContainer");
 const closeGoalModal = document.getElementById("closeGoalModal");
@@ -107,6 +132,12 @@ const zoomLevel = 3.0;
 let pendingLocalVideoId = null;
 let pendingLocalVideoName = "";
 let selectedVideoId = null;
+let pendingDeleteEventId = null;
+let numberTargetInput = null;
+let numberTargetEventId = null;
+let pendingEditEventId = null;
+let pendingDetailEventId = null;
+let savedClickCoords = undefined;
 
 const PENALTY_MINORS = [
   "Tripping",
@@ -176,7 +207,7 @@ const openMetaModal = async () => {
   gameDateInput.value = currentVideo.game_date || "";
   teamNameInput.value = currentVideo.team_name || "";
   opponentNameInput.value = currentVideo.opponent_name || "";
-  matchingUrlInput.value = currentVideo.external_video_url || "";
+  matchingUrlInput.value = currentVideo.matching_video_url || "";
   if (externalVideoUrl) externalVideoUrl.value = currentVideo.external_video_url || "";
   videoMetaModal.classList.remove("hidden");
 };
@@ -209,6 +240,33 @@ const updateProgressUI = () => {
   const text = `${formatTime(current)} / ${formatTime(duration || 0)}`;
   if (mobileTime) mobileTime.textContent = text;
   if (modalTime) modalTime.textContent = text;
+  if (logTimeStatus) logTimeStatus.textContent = `Video time: ${text}`;
+};
+
+const updateEventDetailUI = () => {
+  if (!eventZoomVideo) return;
+  const duration = eventZoomVideo.duration || 0;
+  const current = eventZoomVideo.currentTime || 0;
+  if (eventProgress) {
+    eventProgress.max = duration;
+    eventProgress.value = current;
+  }
+  const text = `${formatTime(current)} / ${formatTime(duration || 0)}`;
+  if (eventTime) eventTime.textContent = text;
+};
+
+const openNumberPad = (initialValue = "") => {
+  numberTargetInput = document.activeElement;
+  if (numberDisplay) {
+    numberDisplay.textContent = initialValue || "-";
+  }
+  numberPadModal.classList.remove("hidden");
+};
+
+const closeNumberPad = () => {
+  numberPadModal.classList.add("hidden");
+  numberTargetInput = null;
+  numberTargetEventId = null;
 };
 
 let arrowSeekInterval = null;
@@ -243,35 +301,60 @@ const setupScrollToggle = (button, range) => {
   });
 };
 
-const wireSeekButtons = (scope) => {
+const wireSeekButtons = (scope, targetVideo = videoPlayer) => {
   if (!scope) return;
   const seekButtons = scope.querySelectorAll("[data-seek]");
   seekButtons.forEach((btn) => {
     const dir = btn.dataset.seek === "forward" ? 1 : -1;
-    btn.addEventListener("pointerdown", () => startArrowSeek(dir));
-    btn.addEventListener("pointerup", stopArrowSeek);
-    btn.addEventListener("pointerleave", stopArrowSeek);
-    btn.addEventListener("pointercancel", stopArrowSeek);
+    if (targetVideo === videoPlayer) {
+      btn.addEventListener("pointerdown", () => startArrowSeek(dir));
+      btn.addEventListener("pointerup", stopArrowSeek);
+      btn.addEventListener("pointerleave", stopArrowSeek);
+      btn.addEventListener("pointercancel", stopArrowSeek);
+      return;
+    }
+    let holdInterval = null;
+    const startHold = () => {
+      if (holdInterval) return;
+      holdInterval = setInterval(() => {
+        if (!targetVideo.duration) return;
+        const delta = dir * (arrowSeekRate / 10);
+        let nextTime = targetVideo.currentTime + delta;
+        if (nextTime < 0) nextTime = 0;
+        if (nextTime > targetVideo.duration) nextTime = targetVideo.duration;
+        targetVideo.currentTime = nextTime;
+      }, 100);
+    };
+    const stopHold = () => {
+      if (holdInterval) {
+        clearInterval(holdInterval);
+        holdInterval = null;
+      }
+    };
+    btn.addEventListener("pointerdown", startHold);
+    btn.addEventListener("pointerup", stopHold);
+    btn.addEventListener("pointerleave", stopHold);
+    btn.addEventListener("pointercancel", stopHold);
   });
   const jumpButtons = scope.querySelectorAll("[data-jump]");
   jumpButtons.forEach((btn) => {
     const delta = parseFloat(btn.dataset.jump || "0");
     btn.addEventListener("click", () => {
-      if (!videoPlayer.duration) return;
-      let nextTime = videoPlayer.currentTime + delta;
+      if (!targetVideo.duration) return;
+      let nextTime = targetVideo.currentTime + delta;
       if (nextTime < 0) nextTime = 0;
-      if (nextTime > videoPlayer.duration) nextTime = videoPlayer.duration;
-      videoPlayer.currentTime = nextTime;
+      if (nextTime > targetVideo.duration) nextTime = targetVideo.duration;
+      targetVideo.currentTime = nextTime;
     });
   });
 };
 
-const updateZoomView = () => {
-  if (!zoomVideo) return;
+const updateZoomView = (target = zoomVideo) => {
+  if (!target) return;
   const x = lastClickCoords ? lastClickCoords.xPct * 100 : 50;
   const y = lastClickCoords ? lastClickCoords.yPct * 100 : 50;
-  zoomVideo.style.transformOrigin = `${x}% ${y}%`;
-  zoomVideo.style.transform = `scale(${zoomLevel})`;
+  target.style.transformOrigin = `${x}% ${y}%`;
+  target.style.transform = `scale(${zoomLevel})`;
 };
 
 const updateLocationStatus = () => {
@@ -426,8 +509,10 @@ const loadVideos = async () => {
     }
   });
 
-  if (data.length > 0) {
-    setEditVisibility(false);
+  if (selectedVideoId && data.some((video) => video.id === selectedVideoId)) {
+    if (videoSelect) videoSelect.value = selectedVideoId;
+    if (videoSelectMobile) videoSelectMobile.value = selectedVideoId;
+    setEditVisibility(true);
   } else {
     setEditVisibility(false);
   }
@@ -512,12 +597,53 @@ const renderLedger = () => {
       <span>${eventItem.event_type}</span>
     `;
     row.addEventListener("click", () => {
-      if (!videoPlayer.duration) return;
-      videoPlayer.currentTime = eventItem.video_time_seconds || 0;
-      videoPlayer.play();
+      openEventDetail(eventItem);
     });
     ledgerBody.appendChild(row);
   });
+};
+
+const pauseAllVideos = () => {
+  if (videoPlayer && !videoPlayer.paused) videoPlayer.pause();
+  if (zoomVideo && !zoomVideo.paused) zoomVideo.pause();
+  if (eventZoomVideo && !eventZoomVideo.paused) eventZoomVideo.pause();
+};
+
+const openEventDetail = (eventItem) => {
+  if (!eventDetailModal || !eventItem) return;
+  pendingDetailEventId = eventItem.id;
+  pauseAllVideos();
+
+  savedClickCoords = lastClickCoords;
+  if (eventItem.ice_x !== null && eventItem.ice_y !== null) {
+    lastClickCoords = { xPct: eventItem.ice_x / 100, yPct: eventItem.ice_y / 100 };
+  } else {
+    lastClickCoords = null;
+  }
+
+  if (detailPlayerNumber) detailPlayerNumber.value = eventItem.player_number || "";
+  if (detailEventNote) detailEventNote.value = eventItem.note || "";
+  if (detailEventMeta) {
+    detailEventMeta.textContent = `${eventItem.event_type} · ${formatTime(
+      eventItem.video_time_seconds || 0
+    )}`;
+  }
+  if (eventDetailTitle) {
+    eventDetailTitle.textContent = eventItem.event_type || "Event clip";
+  }
+
+  if (eventZoomVideo) {
+    const source = videoPlayer.currentSrc || videoPlayer.src || "";
+    if (source && eventZoomVideo.src !== source) {
+      eventZoomVideo.src = source;
+    }
+    eventZoomVideo.currentTime = eventItem.video_time_seconds || 0;
+    eventZoomVideo.pause();
+    updateZoomView(eventZoomVideo);
+    updateEventDetailUI();
+  }
+
+  eventDetailModal.classList.remove("hidden");
 };
 
 const renderClips = () => {
@@ -585,7 +711,12 @@ const loadEvents = async (videoId) => {
     console.error(error);
     return;
   }
-  currentEvents = data;
+  const seen = new Set();
+  currentEvents = (data || []).filter((eventItem) => {
+    if (!eventItem?.id || seen.has(eventItem.id)) return false;
+    seen.add(eventItem.id);
+    return true;
+  });
   renderLedger();
 };
 
@@ -824,6 +955,11 @@ const handleLocalFileSelection = async (file) => {
   const localUrl = URL.createObjectURL(file);
   const cacheKey = `${currentUser.id}:${file.name}:${file.size}:${file.lastModified}`;
 
+  currentPlaybackMode = "local";
+  setVideoSource(localUrl);
+  setExternalStatus("Using local file.");
+  if (videoPlayer) videoPlayer.load();
+
   const targetId = pendingLocalVideoId || selectedVideoId;
   if (targetId) {
     const { error } = await supabaseClient
@@ -845,7 +981,7 @@ const handleLocalFileSelection = async (file) => {
     }
     localVideoCache.set(targetId, localUrl);
     localVideoCache.set(cacheKey, localUrl);
-    currentPlaybackMode = "local";
+    selectedVideoId = targetId;
     await loadVideos();
     await loadVideoById(targetId);
     pendingLocalVideoId = null;
@@ -875,7 +1011,7 @@ const handleLocalFileSelection = async (file) => {
 
   localVideoCache.set(data.id, localUrl);
   localVideoCache.set(cacheKey, localUrl);
-  currentPlaybackMode = "local";
+  selectedVideoId = data.id;
   await loadVideos();
   await loadVideoById(data.id);
 };
@@ -974,6 +1110,19 @@ if (closeEventsModal) {
   closeEventsModal.addEventListener("click", () => eventsModal.classList.add("hidden"));
 }
 
+if (closeEventDetailModal) {
+  closeEventDetailModal.addEventListener("click", () => {
+    if (eventZoomVideo) eventZoomVideo.pause();
+    if (eventDetailModal) eventDetailModal.classList.add("hidden");
+    pendingDetailEventId = null;
+    if (savedClickCoords !== undefined) {
+      lastClickCoords = savedClickCoords;
+      savedClickCoords = undefined;
+      updateZoomView();
+    }
+  });
+}
+
 if (openClipsModalBtn) {
   openClipsModalBtn.addEventListener("click", () =>
     clipsModal.classList.remove("hidden")
@@ -982,6 +1131,159 @@ if (openClipsModalBtn) {
 
 if (closeClipsModal) {
   closeClipsModal.addEventListener("click", () => clipsModal.classList.add("hidden"));
+}
+
+if (cancelDeleteBtn) {
+  cancelDeleteBtn.addEventListener("click", () => {
+    pendingDeleteEventId = null;
+    confirmDeleteModal.classList.add("hidden");
+  });
+}
+
+if (confirmDeleteBtn) {
+  confirmDeleteBtn.addEventListener("click", async () => {
+    if (!pendingDeleteEventId) return;
+    setLoading(true, "Deleting event...");
+    try {
+      const { error } = await supabaseClient
+        .from("events")
+        .delete()
+        .eq("id", pendingDeleteEventId);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      pendingDeleteEventId = null;
+      confirmDeleteModal.classList.add("hidden");
+      if (eventDetailModal) eventDetailModal.classList.add("hidden");
+      if (savedClickCoords !== undefined) {
+        lastClickCoords = savedClickCoords;
+        savedClickCoords = undefined;
+        updateZoomView();
+      }
+      if (currentVideo) {
+        await loadEvents(currentVideo.id);
+        await loadClips(currentVideo.id);
+      }
+    } finally {
+      setLoading(false);
+    }
+  });
+}
+
+if (numberCancelBtn) {
+  numberCancelBtn.addEventListener("click", closeNumberPad);
+}
+
+if (numberDoneBtn) {
+  numberDoneBtn.addEventListener("click", async () => {
+    const value = numberDisplay.textContent === "-" ? "" : numberDisplay.textContent;
+    if (numberTargetEventId) {
+      const { error } = await supabaseClient
+        .from("events")
+        .update({ player_number: value })
+        .eq("id", numberTargetEventId);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      if (currentVideo) await loadEvents(currentVideo.id);
+    } else if (numberTargetInput) {
+      numberTargetInput.value = value;
+    }
+    closeNumberPad();
+  });
+}
+
+if (editPlayerNumber) {
+  editPlayerNumber.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    openNumberPad(editPlayerNumber.value);
+  });
+  editPlayerNumber.addEventListener("focus", () => openNumberPad(editPlayerNumber.value));
+  editPlayerNumber.addEventListener("click", () => openNumberPad(editPlayerNumber.value));
+}
+
+if (cancelEditEventBtn) {
+  cancelEditEventBtn.addEventListener("click", () => {
+    pendingEditEventId = null;
+    if (editEventModal) editEventModal.classList.add("hidden");
+  });
+}
+
+if (saveEditEventBtn) {
+  saveEditEventBtn.addEventListener("click", async () => {
+    if (!pendingEditEventId) return;
+    setLoading(true, "Saving edit...");
+    try {
+      const { error } = await supabaseClient
+        .from("events")
+        .update({
+          player_number: editPlayerNumber?.value.trim() || "",
+          note: editEventNote?.value.trim() || "",
+        })
+        .eq("id", pendingEditEventId);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      pendingEditEventId = null;
+      if (editEventModal) editEventModal.classList.add("hidden");
+      if (currentVideo) await loadEvents(currentVideo.id);
+    } finally {
+      setLoading(false);
+    }
+  });
+}
+
+if (detailEditBtn) {
+  detailEditBtn.addEventListener("click", () => {
+    if (!pendingDetailEventId) return;
+    pendingEditEventId = pendingDetailEventId;
+    if (editPlayerNumber) editPlayerNumber.value = detailPlayerNumber?.value || "";
+    if (editEventNote) editEventNote.value = detailEventNote?.value || "";
+    if (eventDetailModal) eventDetailModal.classList.add("hidden");
+    if (editEventModal) editEventModal.classList.remove("hidden");
+  });
+}
+
+if (detailDeleteBtn) {
+  detailDeleteBtn.addEventListener("click", () => {
+    if (!pendingDetailEventId) return;
+    pendingDeleteEventId = pendingDetailEventId;
+    if (confirmDeleteModal) confirmDeleteModal.classList.remove("hidden");
+  });
+}
+
+if (numberPadModal) {
+  numberPadModal.querySelectorAll("[data-num]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const num = btn.dataset.num;
+      const current = numberDisplay.textContent === "-" ? "" : numberDisplay.textContent;
+      numberDisplay.textContent = `${current}${num}`.slice(0, 2);
+    });
+  });
+  numberPadModal.querySelectorAll("[data-action]").forEach((btn) => {
+    const action = btn.dataset.action;
+    btn.addEventListener("click", () => {
+      const current = numberDisplay.textContent === "-" ? "" : numberDisplay.textContent;
+      if (action === "clear") {
+        numberDisplay.textContent = "-";
+      }
+      if (action === "delete") {
+        numberDisplay.textContent = current.slice(0, -1) || "-";
+      }
+    });
+  });
+}
+
+if (activePlayer) {
+  activePlayer.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    openNumberPad(activePlayer.value);
+  });
+  activePlayer.addEventListener("focus", () => openNumberPad(activePlayer.value));
+  activePlayer.addEventListener("click", () => openNumberPad(activePlayer.value));
 }
 
 if (mobileProgress) {
@@ -996,11 +1298,24 @@ if (modalProgress) {
   });
 }
 
+if (eventProgress && eventZoomVideo) {
+  eventProgress.addEventListener("input", () => {
+    eventZoomVideo.currentTime = parseFloat(eventProgress.value || "0");
+  });
+}
+
 setupScrollToggle(mobileScrollToggle, mobileProgress);
 setupScrollToggle(modalScrollToggle, modalProgress);
+setupScrollToggle(eventScrollToggle, eventProgress);
 
 wireSeekButtons(document.getElementById("mobileControls"));
 wireSeekButtons(document.querySelector(".modal-controls"));
+wireSeekButtons(document.querySelector(".event-controls"), eventZoomVideo);
+
+if (eventZoomVideo) {
+  eventZoomVideo.addEventListener("loadedmetadata", updateEventDetailUI);
+  eventZoomVideo.addEventListener("timeupdate", updateEventDetailUI);
+}
 
 
 if (cancelMetaBtn) {
@@ -1014,7 +1329,7 @@ if (saveMetaBtn) {
       game_date: gameDateInput.value || null,
       team_name: teamNameInput.value.trim() || null,
       opponent_name: opponentNameInput.value.trim() || null,
-      external_video_url: matchingUrlInput.value.trim() || null,
+      matching_video_url: matchingUrlInput.value.trim() || null,
     };
     setLoading(true, "Saving details...");
     try {
@@ -1104,6 +1419,7 @@ useLocalBtn.addEventListener("click", async () => {
 });
 
 document.querySelectorAll(".secondary-btn").forEach((button) => {
+  if (button.classList.contains("event-btn")) return;
   button.addEventListener("click", async () => {
     const eventType = button.dataset.event;
     if (eventType === "Custom") {

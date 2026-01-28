@@ -237,11 +237,25 @@
                       <button class="ghost-btn" id="mobileScrollToggle" type="button">Scroll</button>
                     </div>
                     <div class="control-row">
-                      <button class="control-btn" data-seek="back" type="button">⏪</button>
-                      <button class="control-btn" data-jump="-5" type="button">-5</button>
+                      <div class="seek-pair">
+                        <button class="control-btn" data-seek="back" type="button" aria-label="Rewind">
+                          <svg class="seek-icon" viewBox="0 0 20 20" aria-hidden="true">
+                            <polyline points="11 4 5 10 11 16"></polyline>
+                            <polyline points="17 4 11 10 17 16"></polyline>
+                          </svg>
+                        </button>
+                        <button class="control-btn" data-jump="-5" type="button">-5</button>
+                      </div>
                       <span class="muted" id="mobileTime">0:00 / 0:00</span>
-                      <button class="control-btn" data-jump="5" type="button">+5</button>
-                      <button class="control-btn" data-seek="forward" type="button">⏩</button>
+                      <div class="seek-pair">
+                        <button class="control-btn" data-jump="5" type="button">+5</button>
+                        <button class="control-btn" data-seek="forward" type="button" aria-label="Fast forward">
+                          <svg class="seek-icon" viewBox="0 0 20 20" aria-hidden="true">
+                            <polyline points="3 4 9 10 3 16"></polyline>
+                            <polyline points="9 4 15 10 9 16"></polyline>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -340,11 +354,25 @@
                 <button class="ghost-btn" id="modalScrollToggle" type="button">Scroll</button>
               </div>
               <div class="control-row">
-                <button class="control-btn" data-seek="back" type="button">⏪</button>
-                <button class="control-btn" data-jump="-5" type="button">-5</button>
+                <div class="seek-pair">
+                  <button class="control-btn" data-seek="back" type="button" aria-label="Rewind">
+                    <svg class="seek-icon" viewBox="0 0 20 20" aria-hidden="true">
+                      <polyline points="11 4 5 10 11 16"></polyline>
+                      <polyline points="17 4 11 10 17 16"></polyline>
+                    </svg>
+                  </button>
+                  <button class="control-btn" data-jump="-5" type="button">-5</button>
+                </div>
                 <span class="muted" id="modalTime">0:00 / 0:00</span>
-                <button class="control-btn" data-jump="5" type="button">+5</button>
-                <button class="control-btn" data-seek="forward" type="button">⏩</button>
+                <div class="seek-pair">
+                  <button class="control-btn" data-jump="5" type="button">+5</button>
+                  <button class="control-btn" data-seek="forward" type="button" aria-label="Fast forward">
+                    <svg class="seek-icon" viewBox="0 0 20 20" aria-hidden="true">
+                      <polyline points="3 4 9 10 3 16"></polyline>
+                      <polyline points="9 4 15 10 9 16"></polyline>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -352,7 +380,7 @@
             <div class="log-fields">
               <label class="field">
                 Active player #
-                <input type="text" id="activePlayer" placeholder="12" />
+                <input type="text" id="activePlayer" placeholder="12" readonly inputmode="numeric" />
               </label>
               <label class="field">
                 Event note
@@ -362,6 +390,9 @@
             <div class="location-row">
               <span class="muted" id="locationStatus">Tap the video to set ice location.</span>
               <button class="ghost-btn" id="clearLocationBtn" type="button">Clear</button>
+            </div>
+            <div class="time-row">
+              <span class="muted" id="logTimeStatus">Video time: 0:00 / 0:00</span>
             </div>
             <div class="log-sections">
               <div class="section-block">
@@ -448,6 +479,123 @@
             <p class="muted clip-empty">No clip requests yet.</p>
           </div>
           <button class="primary-btn" id="exportBtn">Export session report</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="eventDetailModal">
+      <div class="modal-card modal-wide">
+        <div class="modal-header">
+          <h3 id="eventDetailTitle">Event clip</h3>
+          <button class="ghost-btn" id="closeEventDetailModal" type="button">Close</button>
+        </div>
+        <div class="log-modal-body event-detail-body">
+          <div class="video-zoom">
+            <div class="zoom-player">
+              <video id="eventZoomVideo" playsinline></video>
+              <div class="zoom-crosshair"></div>
+            </div>
+            <div class="mobile-controls event-controls">
+              <div class="timeline-row">
+                <input type="range" id="eventProgress" min="0" max="0" step="0.1" value="0" />
+                <button class="ghost-btn" id="eventScrollToggle" type="button">Scroll</button>
+              </div>
+              <div class="control-row">
+                <div class="seek-pair">
+                  <button class="control-btn" data-seek="back" type="button" aria-label="Rewind">
+                    <svg class="seek-icon" viewBox="0 0 20 20" aria-hidden="true">
+                      <polyline points="11 4 5 10 11 16"></polyline>
+                      <polyline points="17 4 11 10 17 16"></polyline>
+                    </svg>
+                  </button>
+                  <button class="control-btn" data-jump="-5" type="button">-5</button>
+                </div>
+                <span class="muted" id="eventTime">0:00 / 0:00</span>
+                <div class="seek-pair">
+                  <button class="control-btn" data-jump="5" type="button">+5</button>
+                  <button class="control-btn" data-seek="forward" type="button" aria-label="Fast forward">
+                    <svg class="seek-icon" viewBox="0 0 20 20" aria-hidden="true">
+                      <polyline points="3 4 9 10 3 16"></polyline>
+                      <polyline points="9 4 15 10 9 16"></polyline>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="log-card">
+            <div class="log-fields">
+              <label class="field">
+                Player #
+                <input type="text" id="detailPlayerNumber" readonly inputmode="numeric" />
+              </label>
+              <label class="field">
+                Note
+                <input type="text" id="detailEventNote" placeholder="Optional note" readonly />
+              </label>
+            </div>
+            <div class="location-row">
+              <span class="muted" id="detailEventMeta">Event · 0:00</span>
+            </div>
+            <div class="video-select-actions">
+              <button class="ghost-btn" id="detailEditBtn" type="button">Edit</button>
+              <button class="ghost-btn" id="detailDeleteBtn" type="button">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="confirmDeleteModal">
+      <div class="modal-card">
+        <h3>Delete event?</h3>
+        <p class="muted">This action cannot be undone.</p>
+        <div class="video-select-actions">
+          <button class="ghost-btn" id="cancelDeleteBtn" type="button">Cancel</button>
+          <button class="primary-btn" id="confirmDeleteBtn" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="numberPadModal">
+      <div class="modal-card">
+        <h3>Jersey number</h3>
+        <div class="number-display" id="numberDisplay">-</div>
+        <div class="number-grid">
+          <button class="control-btn" data-num="1" type="button">1</button>
+          <button class="control-btn" data-num="2" type="button">2</button>
+          <button class="control-btn" data-num="3" type="button">3</button>
+          <button class="control-btn" data-num="4" type="button">4</button>
+          <button class="control-btn" data-num="5" type="button">5</button>
+          <button class="control-btn" data-num="6" type="button">6</button>
+          <button class="control-btn" data-num="7" type="button">7</button>
+          <button class="control-btn" data-num="8" type="button">8</button>
+          <button class="control-btn" data-num="9" type="button">9</button>
+          <button class="control-btn" data-action="clear" type="button">C</button>
+          <button class="control-btn" data-num="0" type="button">0</button>
+          <button class="control-btn" data-action="delete" type="button">D</button>
+        </div>
+        <div class="video-select-actions">
+          <button class="ghost-btn" id="numberCancelBtn" type="button">Cancel</button>
+          <button class="primary-btn" id="numberDoneBtn" type="button">Done</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="editEventModal">
+      <div class="modal-card">
+        <h3>Edit event</h3>
+        <label class="field">
+          Player #
+          <input type="text" id="editPlayerNumber" placeholder="12" readonly inputmode="numeric" />
+        </label>
+        <label class="field">
+          Note
+          <input type="text" id="editEventNote" placeholder="Optional note" />
+        </label>
+        <div class="video-select-actions">
+          <button class="ghost-btn" id="cancelEditEventBtn" type="button">Cancel</button>
+          <button class="primary-btn" id="saveEditEventBtn" type="button">Save</button>
         </div>
       </div>
     </div>

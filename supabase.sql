@@ -33,6 +33,7 @@ create table if not exists public.videos (
   storage_bucket text not null default 'videos',
   storage_path text not null,
   external_video_url text,
+  matching_video_url text,
   game_date date,
   team_name text,
   opponent_name text,
@@ -40,7 +41,8 @@ create table if not exists public.videos (
   file_last_modified bigint,
   duration_seconds double precision,
   status text not null default 'uploaded',
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
 );
 
 alter table public.videos enable row level security;
@@ -74,7 +76,8 @@ create table if not exists public.events (
   ice_y double precision,
   goal_x double precision,
   goal_y double precision,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
 );
 
 alter table public.events enable row level security;
@@ -136,6 +139,18 @@ begin
   return new;
 end;
 $$ language plpgsql;
+
+-- Updated_at trigger for videos
+drop trigger if exists set_videos_updated_at on public.videos;
+create trigger set_videos_updated_at
+before update on public.videos
+for each row execute procedure public.set_updated_at();
+
+-- Updated_at trigger for events
+drop trigger if exists set_events_updated_at on public.events;
+create trigger set_events_updated_at
+before update on public.events
+for each row execute procedure public.set_updated_at();
 
 drop trigger if exists set_clips_updated_at on public.clips;
 create trigger set_clips_updated_at
