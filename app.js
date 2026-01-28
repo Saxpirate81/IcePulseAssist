@@ -43,6 +43,7 @@ const closeClipsModal = document.getElementById("closeClipsModal");
 const headerCenter = document.querySelector(".header-center");
 const mobileVideoBar = document.getElementById("mobileVideoBar");
 const videoClickOverlay = document.getElementById("videoClickOverlay");
+const videoPlayToggle = document.getElementById("videoPlayToggle");
 const confirmDeleteModal = document.getElementById("confirmDeleteModal");
 const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
 const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
@@ -141,6 +142,8 @@ let pendingDetailEventId = null;
 let savedClickCoords = undefined;
 let lastLocalVideoUrl = "";
 let lastLocalFile = null;
+let lastPickedKey = "";
+let lastPickedAt = 0;
 
 const PENALTY_MINORS = [
   "Tripping",
@@ -1065,9 +1068,22 @@ const handleLocalFileSelection = async (file) => {
   }
 };
 
+const handlePickedFile = async (file) => {
+  if (!file) return;
+  const key = `${file.name}-${file.size}-${file.lastModified || 0}`;
+  const now = Date.now();
+  if (key === lastPickedKey && now - lastPickedAt < 2000) return;
+  lastPickedKey = key;
+  lastPickedAt = now;
+  await handleLocalFileSelection(file);
+};
+
 if (quickVideoInput) {
   quickVideoInput.addEventListener("change", async (event) => {
-    await handleLocalFileSelection(event.target.files[0]);
+    await handlePickedFile(event.target.files[0]);
+  });
+  quickVideoInput.addEventListener("input", async (event) => {
+    await handlePickedFile(event.target.files[0]);
   });
 }
 
@@ -1530,10 +1546,12 @@ document.addEventListener("click", (event) => {
 
 videoPlayer.addEventListener("play", () => {
   if (zoomVideo) zoomVideo.play();
+  if (videoPlayToggle) videoPlayToggle.classList.add("is-playing");
 });
 
 videoPlayer.addEventListener("pause", () => {
   if (zoomVideo) zoomVideo.pause();
+  if (videoPlayToggle) videoPlayToggle.classList.remove("is-playing");
 });
 
 videoPlayer.addEventListener("seeking", () => {
@@ -1600,9 +1618,6 @@ document.addEventListener("keyup", (event) => {
 
 if (videoClickOverlay) {
   videoClickOverlay.addEventListener("click", (event) => {
-    if (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) {
-      return;
-    }
     const coords = getVideoClickCoords(event);
     if (!coords) return;
     videoPlayer.pause();
@@ -1610,6 +1625,17 @@ if (videoClickOverlay) {
     updateLocationStatus();
     updateZoomView();
     if (logModal) logModal.classList.remove("hidden");
+  });
+}
+
+if (videoPlayToggle) {
+  videoPlayToggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (videoPlayer.paused) {
+      videoPlayer.play();
+    } else {
+      videoPlayer.pause();
+    }
   });
 }
 
