@@ -1,0 +1,16 @@
+{
+  "name": "IcePulse Assist",
+  "short_name": "IcePulse",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b0f16",
+  "theme_color": "#2d5bff",
+  "icons": [
+    {
+      "src": "https://docs.google.com/drawings/d/e/2PACX-1vStg6tJMsSEZ7P8xryTshhXFG44y1gBzRVXT5ssyjDN9NVa0xIxJ6fPufD23qtw7N_LAV3xf_TGB8-2/pub?w=512&h=512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

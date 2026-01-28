@@ -4,6 +4,7 @@ const authPanel = document.getElementById("authPanel");
 const dashboard = document.getElementById("dashboard");
 const logoutBtn = document.getElementById("logoutBtn");
 const profileBtn = document.getElementById("profileBtn");
+const closeAccountMenu = document.getElementById("closeAccountMenu");
 const loginForm = document.getElementById("loginForm");
 const signupForm = document.getElementById("signupForm");
 const signupCard = document.getElementById("signupCard");
@@ -967,15 +968,27 @@ switchAccount.addEventListener("click", async () => {
 const handleLocalFileSelection = async (file) => {
   if (!file || !currentUser) return;
 
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  let blobForUrl = file;
+  if (isIOS) {
+    try {
+      const buffer = await file.arrayBuffer();
+      blobForUrl = new Blob([buffer], { type: file.type || "video/mp4" });
+    } catch (error) {
+      console.warn("Unable to copy video blob.", error);
+      blobForUrl = file;
+    }
+  }
+
   const safeName = file.name.replace(/\s+/g, "-");
   const storagePath = `local/${Date.now()}-${safeName}`;
-  const localUrl = URL.createObjectURL(file);
+  const localUrl = URL.createObjectURL(blobForUrl);
   const cacheKey = `${currentUser.id}:${file.name}:${file.size}:${file.lastModified}`;
 
   currentPlaybackMode = "local";
   setExternalStatus("Using local file.");
   lastLocalVideoUrl = localUrl;
-  lastLocalFile = file;
+  lastLocalFile = blobForUrl;
   applyLocalVideoSource(localUrl);
   setTimeout(() => {
     if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
@@ -1499,6 +1512,13 @@ profileBtn.addEventListener("click", () => {
   menu.classList.toggle("hidden");
 });
 
+if (closeAccountMenu) {
+  closeAccountMenu.addEventListener("click", () => {
+    const menu = document.getElementById("accountMenu");
+    if (menu) menu.classList.add("hidden");
+  });
+}
+
 document.addEventListener("click", (event) => {
   const menu = document.getElementById("accountMenu");
   const menuWrap = document.querySelector(".account-menu");
@@ -1580,6 +1600,9 @@ document.addEventListener("keyup", (event) => {
 
 if (videoClickOverlay) {
   videoClickOverlay.addEventListener("click", (event) => {
+    if (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) {
+      return;
+    }
     const coords = getVideoClickCoords(event);
     if (!coords) return;
     videoPlayer.pause();
