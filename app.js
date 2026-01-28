@@ -139,6 +139,7 @@ let pendingEditEventId = null;
 let pendingDetailEventId = null;
 let savedClickCoords = undefined;
 let lastLocalVideoUrl = "";
+let lastLocalFile = null;
 
 const PENALTY_MINORS = [
   "Tripping",
@@ -961,12 +962,19 @@ const handleLocalFileSelection = async (file) => {
   setExternalStatus("Using local file.");
   if (videoPlayer) videoPlayer.load();
   lastLocalVideoUrl = localUrl;
+  lastLocalFile = file;
   setTimeout(() => {
     if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
       setVideoSource(localUrl);
       if (videoPlayer) videoPlayer.load();
     }
   }, 200);
+  setTimeout(() => {
+    if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
+      setVideoSource(localUrl);
+      if (videoPlayer) videoPlayer.load();
+    }
+  }, 800);
 
   const targetId = pendingLocalVideoId || selectedVideoId;
   if (targetId) {
@@ -1031,10 +1039,6 @@ const handleLocalFileSelection = async (file) => {
     if (videoPlayer) videoPlayer.load();
   }
 };
-
-videoInput.addEventListener("change", async (event) => {
-  await handleLocalFileSelection(event.target.files[0]);
-});
 
 if (quickVideoInput) {
   quickVideoInput.addEventListener("change", async (event) => {
@@ -1542,6 +1546,18 @@ document.addEventListener(
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
+  if (currentPlaybackMode !== "local" || !lastLocalVideoUrl) return;
+  setVideoSource(lastLocalVideoUrl);
+  if (videoPlayer) videoPlayer.load();
+});
+
+window.addEventListener("pageshow", () => {
+  if (currentPlaybackMode !== "local" || !lastLocalVideoUrl) return;
+  setVideoSource(lastLocalVideoUrl);
+  if (videoPlayer) videoPlayer.load();
+});
+
+window.addEventListener("focus", () => {
   if (currentPlaybackMode !== "local" || !lastLocalVideoUrl) return;
   setVideoSource(lastLocalVideoUrl);
   if (videoPlayer) videoPlayer.load();

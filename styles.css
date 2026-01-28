@@ -1099,6 +1099,7 @@ body {
 @media (max-width: 720px) {
   .top-bar {
     gap: 12px;
+    padding-top: env(safe-area-inset-top);
   }
 
   .header-center {
@@ -1179,7 +1180,7 @@ body {
   }
 
   .page {
-    height: calc(100vh - 96px);
+    height: calc(100dvh - 96px - env(safe-area-inset-top));
     overflow: hidden;
   }
 
