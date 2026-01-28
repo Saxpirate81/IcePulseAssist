@@ -983,28 +983,34 @@ const handleLocalFileSelection = async (file) => {
   if (!file || !currentUser) return;
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  let blobForUrl = file;
-  if (isIOS) {
-    try {
-      const buffer = await file.arrayBuffer();
-      blobForUrl = new Blob([buffer], { type: file.type || "video/mp4" });
-    } catch (error) {
-      console.warn("Unable to copy video blob.", error);
-      blobForUrl = file;
-    }
-  }
 
   const safeName = file.name.replace(/\s+/g, "-");
   const storagePath = `local/${Date.now()}-${safeName}`;
-  const localUrl = URL.createObjectURL(blobForUrl);
+  const localUrl = URL.createObjectURL(file);
   const cacheKey = `${currentUser.id}:${file.name}:${file.size}:${file.lastModified}`;
 
   currentPlaybackMode = "local";
   setExternalStatus("Using local file.");
   lastLocalVideoUrl = localUrl;
-  lastLocalFile = blobForUrl;
+  lastLocalFile = file;
   applyLocalVideoSource(localUrl);
   setRetryButtonVisible(true);
+  if (isIOS) {
+    file
+      .arrayBuffer()
+      .then((buffer) => {
+        const stableBlob = new Blob([buffer], { type: file.type || "video/mp4" });
+        lastLocalFile = stableBlob;
+        if (lastLocalVideoUrl) {
+          URL.revokeObjectURL(lastLocalVideoUrl);
+        }
+        lastLocalVideoUrl = URL.createObjectURL(stableBlob);
+        applyLocalVideoSource(lastLocalVideoUrl);
+      })
+      .catch((error) => {
+        console.warn("Unable to copy video blob.", error);
+      });
+  }
   setTimeout(() => {
     if (currentPlaybackMode === "local" && lastLocalVideoUrl === localUrl) {
       applyLocalVideoSource(localUrl);
